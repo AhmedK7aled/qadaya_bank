@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="بنك أسئلة القضايا المجتمعية - تدرب وراجع واختبر نفسك">
     <title>بنك أسئلة القضايا المجتمعية</title>
+    <link rel="icon" type="image/svg+xml" href="logo/variations/logo-tab.svg">
     <link rel="stylesheet" href="styles.css">
     <script defer src="https://cloud.umami.is/script.js" data-website-id="34e213bb-a8d7-4c66-973a-3e7698b18c38"></script>
 </head>
@@ -17,7 +18,7 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>📚 بنك القضايا</h2>
+            <img src="logo/variations/logo-sidebar.svg" alt="بنك القضايا المجتمعية" class="logo-sidebar">
             <button id="btn-close-sidebar" class="btn-icon btn-close-mobile" title="إغلاق القائمة">✕</button>
         </div>
         
@@ -55,10 +56,10 @@
                     <label for="filter-status">📋 الحالة</label>
                     <select id="filter-status">
                         <option value="all">الكل</option>
-                        <option value="unanswered">لم تُجَب بعد</option>
-                        <option value="correct">صحيحة ✔️</option>
-                        <option value="wrong">خاطئة ✖️</option>
-                        <option value="bookmarked">المحفوظات 🔖</option>
+                        <option value="unanswered">لم تتم الإجابة</option>
+                        <option value="correct">صحيحة</option>
+                        <option value="wrong">خاطئة (مراجعة الأخطاء)</option>
+                        <option value="bookmarked">محفوظة 🔖</option>
                     </select>
                 </div>
             </div>
@@ -109,7 +110,7 @@
                 <button id="btn-toggle-sidebar" class="btn-icon btn-hamburger" title="القائمة">☰</button>
                 <div class="header-titles">
                     <h1>بنك أسئلة القضايا المجتمعية</h1>
-                    <p>اختر إجابتك واحصل على نتيجة فورية!</p>
+                    <p>لا تنسوني من صالح دعائكم 💙</p>
                 </div>
             </div>
             <div class="header-left">
@@ -150,18 +151,69 @@
             <button id="search-clear" class="search-clear" title="مسح البحث">✕</button>
         </div>
 
-        <div class="question-count" id="question-count"></div>
+        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="question-count" id="question-count" style="margin-bottom: 0;"></div>
+            <button id="btn-smart-review" style="background-color: #EF4444; border: none; padding: 8px 16px; border-radius: 8px; color: #fff; font-family: 'Tajawal', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2); transition: all 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                مراجعة الأخطاء
+            </button>
+        </div>
         <div class="question-list" id="question-list"></div>
         <div class="pagination" id="pagination"></div>
         </div>
 
         <div id="progress-view" class="view-section" style="display: none;">
-            <div class="dashboard" style="grid-template-columns: 1fr;">
-                <div class="stat-card" style="text-align: center; padding: 24px;">
-                    <h3>إجمالي التقدم العام</h3>
-                    <div id="main-progress-chart"></div>
+            <div class="kpi-cards-container" id="kpi-container">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <p>إجمالي الأسئلة</p>
+                        <h4 id="kpi-total">0</h4>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <p>إجابات صحيحة</p>
+                        <h4 id="kpi-correct" style="color: #10b981;">0</h4>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <p>إجابات خاطئة</p>
+                        <h4 id="kpi-wrong" style="color: #ef4444;">0</h4>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <p>نسبة الإنجاز</p>
+                        <h4 id="kpi-percent" style="color: #f59e0b;">0%</h4>
+                    </div>
                 </div>
             </div>
+
+            <div class="dual-charts-container">
+                <div class="stat-card">
+                    <h3>التوزيع العام</h3>
+                    <div id="main-progress-chart"></div>
+                </div>
+                <div class="stat-card">
+                    <h3>مقارنة دقة المواضيع</h3>
+                    <div style="position: relative; height: 250px; width: 100%;"><canvas id="chart-subjects-bar"></canvas></div>
+                </div>
+            </div>
+
+            <h3 class="section-title">تفاصيل المواضيع</h3>
             <div id="progress-grid" class="progress-grid"></div>
         </div>
     </main>
@@ -180,6 +232,7 @@
 <script src="data/tf4_data.js"></script>
 <script src="data/mcq5_data.js"></script>
 <script src="data/q6_data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="data/db.js"></script>
 <script src="app.js"></script>
 </body>

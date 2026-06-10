@@ -90,9 +90,10 @@ body {
     border-bottom: 2px solid var(--q-border);
     padding-bottom: 15px;
 }
-.sidebar-header h2 {
-    font-size: 1.3rem;
-    color: var(--primary-dark);
+.logo-sidebar {
+    height: 48px;
+    max-width: 100%;
+    object-fit: contain;
 }
 .sidebar-content {
     display: flex;
@@ -252,7 +253,9 @@ button {
     transition:all var(--speed);display:inline-flex;align-items:center;gap:4px;
 }
 
-.btn-bookmark {
+.q-actions { display: flex; gap: 8px; }
+
+.btn-bookmark, .btn-copy {
     background: transparent;
     border: 2px solid var(--primary);
     color: var(--primary);
@@ -265,12 +268,15 @@ button {
     align-items: center;
     gap: 6px;
 }
-.btn-bookmark svg { margin-top: -1px; }
+.btn-bookmark svg, .btn-copy svg { margin-top: -1px; }
 .btn-bookmark:hover {
     background: var(--primary);
     color: #fff;
     box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
+.btn-copy { border: 2px solid #10B981; color: #10B981; }
+.btn-copy:hover { background: #10B981; color: #fff; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); transform: translateY(-2px); }
+
 .btn-bookmark.active {
     background: var(--primary);
     color: #fff;
@@ -511,12 +517,64 @@ body.dark .question-card.focused-question {
 .nav-btn:hover { background: var(--card-bg); }
 .nav-btn.active { background: var(--primary); color: #fff; }
 
-/* ===== PROGRESS VIEW ===== */
+/* ===== PROGRESS DASHBOARD ===== */
+.kpi-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+.kpi-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.kpi-info p {
+    font-size: 0.9rem;
+    color: #64748B;
+    margin: 0 0 4px 0;
+}
+.kpi-info h4 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--text-color);
+}
+.dual-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.section-title {
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+    margin: 10px 0;
+    border-right: 4px solid var(--primary);
+    padding-right: 10px;
+}
 .progress-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
-    margin-top: 20px;
+    margin-bottom: 40px;
 }
 .subject-stat-card {
     background: var(--card-bg);
@@ -527,6 +585,11 @@ body.dark .question-card.focused-question {
     flex-direction: column;
     align-items: center;
     border: 1px solid var(--border-color);
+    transition: transform 0.2s;
+}
+.subject-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
 }
 .subject-stat-card h3 {
     font-size: 1.1rem;

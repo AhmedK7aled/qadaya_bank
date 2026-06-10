@@ -1,0 +1,27 @@
+<svg id="logo-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" width="100%" height="100%">
+<style> 
+  .bg-color { fill: #3B82F6; } 
+  .icon-fg { fill: #FFFFFF; } 
+  .icon-stroke { stroke: #3B82F6; } 
+  .text-primary { fill: #3B82F6; }
+  .text-color { fill: #1E293B; } 
+  @media (prefers-color-scheme: dark) { .text-color { fill: #F8FAFC; } } 
+</style>
+<defs><clipPath id="icon-clip"><rect x="230" y="10" width="60" height="60" rx="14"></rect></clipPath></defs>
+<!-- Icon -->
+<rect x="230" y="10" width="60" height="60" rx="14" class="bg-color"></rect>
+<g clip-path="url(#icon-clip)">
+  <g class="icon-fg icon-stroke" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" paint-order="stroke fill" transform="translate(230, 10) scale(0.3)">
+    <path d="M 18 200 V 196 A 18 18 0 0 1 54 196 V 200 Z"></path><circle cx="36" cy="164" r="11"></circle>
+    <path d="M 146 200 V 196 A 18 18 0 0 1 182 196 V 200 Z"></path><circle cx="164" cy="164" r="11"></circle>
+    <path d="M 42 200 V 186 A 22 22 0 0 1 86 186 V 200 Z"></path><circle cx="64" cy="146" r="14"></circle>
+    <path d="M 114 200 V 186 A 22 22 0 0 1 158 186 V 200 Z"></path><circle cx="136" cy="146" r="14"></circle>
+    <path d="M 68 200 V 178 A 32 32 0 0 1 132 178 V 200 Z"></path><circle cx="100" cy="118" r="19"></circle>
+  </g>
+</g>
+<!-- Distinct Text Design -->
+<g transform="translate(215, 0)">
+  <text x="0" y="42" font-family="'Cairo', system-ui, sans-serif" font-size="34" font-weight="900" text-anchor="end" class="text-primary">قضايا</text>
+  <text x="0" y="70" font-family="'Cairo', system-ui, sans-serif" font-size="20" font-weight="700" text-anchor="end" class="text-color" letter-spacing="1">مجتمعية</text>
+</g>
+</svg>

@@ -93,33 +93,45 @@
     }
 
     // === Progress View Rendering ===
-    function createCircleChart(percent, isMain) {
-        var cls = isMain ? 'circular-chart main' : 'circular-chart';
-        var colorClass = 'color-red';
-        if (percent >= 75) colorClass = 'color-green';
-        else if (percent >= 40) colorClass = 'color-orange';
-        
-        return '<svg viewBox="0 0 36 36" class="' + cls + '">' +
-          '<path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
-          '<path class="circle ' + colorClass + '" stroke-dasharray="' + percent + ', 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
-          '<text x="18" y="20.35" class="percentage">' + percent + '%</text>' +
-        '</svg>';
-    }
+    var chartInstances = {};
 
     function renderProgressView() {
         if (!mainProgressChart || !progressGrid) return;
+        if (typeof Chart === 'undefined') return;
+
         var s = db.getStats();
-        var mainPct = s.total > 0 ? Math.round((s.answered / s.total) * 100) : 0;
-        mainProgressChart.innerHTML = createCircleChart(mainPct, true);
+        var mainUnanswered = s.total - s.correct - s.wrong;
+        var percent = s.total > 0 ? Math.round(((s.correct + s.wrong) / s.total) * 100) : 0;
+
+        // Populate KPIs
+        var kpiTotal = document.getElementById('kpi-total');
+        var kpiCorrect = document.getElementById('kpi-correct');
+        var kpiWrong = document.getElementById('kpi-wrong');
+        var kpiPercent = document.getElementById('kpi-percent');
+        if (kpiTotal) kpiTotal.textContent = s.total;
+        if (kpiCorrect) kpiCorrect.textContent = s.correct;
+        if (kpiWrong) kpiWrong.textContent = s.wrong;
+        if (kpiPercent) kpiPercent.textContent = percent + '%';
+
+        mainProgressChart.innerHTML = '<div style="position: relative; height: 250px; width: 100%; margin: 0 auto;"><canvas id="chart-main"></canvas></div>';
 
         var subjStats = db.getSubjectStats();
         var gridHtml = '';
-        for (var subj in subjStats) {
+        var subjects = Object.keys(subjStats);
+        var subjectLabels = [];
+        var subjectAccuracies = [];
+        var isDark = document.body.classList.contains('dark');
+
+        for (var i = 0; i < subjects.length; i++) {
+            var subj = subjects[i];
             var ss = subjStats[subj];
-            var pct = ss.total > 0 ? Math.round((ss.answered / ss.total) * 100) : 0;
+            var subjAcc = ss.answered > 0 ? Math.round((ss.correct / ss.answered) * 100) : 0;
+            subjectLabels.push(subj);
+            subjectAccuracies.push(subjAcc);
+
             gridHtml += '<div class="subject-stat-card">' +
                 '<h3>' + subj + '</h3>' +
-                createCircleChart(pct, false) +
+                '<div style="position: relative; height: 160px; width: 100%; margin: 10px 0;"><canvas id="chart-subj-' + i + '"></canvas></div>' +
                 '<div class="stat-details">' +
                     '<div><span>الإجمالي</span>' + ss.total + '</div>' +
                     '<div style="color:#10B981"><span>صحيح</span>' + ss.correct + '</div>' +
@@ -128,6 +140,118 @@
             '</div>';
         }
         progressGrid.innerHTML = gridHtml;
+
+        for (var key in chartInstances) {
+            if (chartInstances[key]) chartInstances[key].destroy();
+        }
+        chartInstances = {};
+
+        function createDoughnut(id, correct, wrong, unanswered) {
+            var ctx = document.getElementById(id);
+            if (!ctx) return;
+            var isDark = document.body.classList.contains('dark');
+            
+            // Calculate percentage
+            var total = correct + wrong + unanswered;
+            var percent = total > 0 ? Math.round(((correct + wrong) / total) * 100) : 0;
+
+            chartInstances[id] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['إجابات صحيحة', 'إجابات خاطئة', 'لم تتم الإجابة'],
+                    datasets: [{
+                        data: [correct, wrong, unanswered],
+                        backgroundColor: ['#10B981', '#EF4444', isDark ? '#334155' : '#E2E8F0'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        var width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        var fontSize = (height / 114).toFixed(2);
+                        ctx.font = '800 ' + fontSize + 'em Tajawal';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = isDark ? '#E2E8F0' : '#1E293B';
+                        var text = percent + '%',
+                            textX = Math.round((width - ctx.measureText(text).width) / 2),
+                            textY = height / 2;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            bodyFont: { family: 'Tajawal', size: 14 },
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + context.raw;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        createDoughnut('chart-main', s.correct, s.wrong, mainUnanswered);
+        for (var i = 0; i < subjects.length; i++) {
+            var subj = subjects[i];
+            var ss = subjStats[subj];
+            var unans = ss.total - ss.correct - ss.wrong;
+            createDoughnut('chart-subj-' + i, ss.correct, ss.wrong, unans);
+        }
+
+        // Draw Subject Accuracy Bar Chart
+        var barCtx = document.getElementById('chart-subjects-bar');
+        if (barCtx && subjects.length > 0) {
+            chartInstances['chart-subjects-bar'] = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: subjectLabels.map(function(s) { return s.length > 15 ? s.substring(0, 15) + '...' : s; }),
+                    datasets: [{
+                        label: 'نسبة الدقة (%)',
+                        data: subjectAccuracies,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: isDark ? '#334155' : '#E2E8F0' },
+                            ticks: { color: isDark ? '#94A3B8' : '#475569', font: { family: 'Tajawal' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: isDark ? '#94A3B8' : '#475569', font: { family: 'Tajawal' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            bodyFont: { family: 'Tajawal', size: 14 },
+                            callbacks: {
+                                label: function(context) {
+                                    return ' الدقة: ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 
     // === Navigation ===
@@ -346,12 +470,15 @@
         var card = document.createElement('div');
         var cls = 'question-card';
         if (q.isCorrect === true) cls += ' answered-correct';
-        else if (q.isCorrect === false) cls += ' answered-wrong';
+        else if (q.isCorrect === false && filterStatus.value !== 'wrong') cls += ' answered-wrong';
         if (q.isBookmarked) cls += ' bookmarked';
         card.className = cls;
         card.id = 'q-' + q.id;
 
         var answered = (q.userAnswer !== null && q.userAnswer !== undefined);
+        if (filterStatus.value === 'wrong') {
+            answered = false; // Allow re-answering in smart review mode
+        }
         var typeBadge = q.type === 'صح/خطأ'
             ? '<span class="badge badge-tf">صح / خطأ</span>'
             : '<span class="badge badge-mcq">اختيار من متعدد</span>';
@@ -394,10 +521,23 @@
         var bookmarkIconFilled = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>';
         var bookmarkHtml = (q.isBookmarked ? bookmarkIconFilled + ' محفوظ' : bookmarkIconOutline + ' حفظ');
 
+        var copyIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        
+        var rawText = q.text.replace(/<[^>]*>?/gm, '');
+        var shareText = 'هل يمكنك حل هذا السؤال؟\n\n' + rawText + '\n\nالخيارات:\n';
+        if (q.type === 'صح/خطأ') {
+            shareText += '- صح\n- خطأ\n';
+        } else if (q.options) {
+            for (var i = 0; i < q.options.length; i++) {
+                shareText += '- ' + q.options[i].replace(/<[^>]*>?/gm, '') + '\n';
+            }
+        }
+        var encodedShareText = encodeURIComponent(shareText);
+
         card.innerHTML =
             '<div class="q-header">' +
             '<div class="q-meta">' + typeBadge + '<span class="q-subject">' + q.subject + '</span></div>' +
-            '<div class="q-actions"><button class="btn-bookmark ' + (q.isBookmarked ? 'active' : '') + '" data-id="' + q.id + '">' + bookmarkHtml + '</button></div>' +
+            '<div class="q-actions"><button class="btn-copy" data-text="' + encodedShareText + '" title="نسخ السؤال">' + copyIcon + ' نسخ</button><button class="btn-bookmark ' + (q.isBookmarked ? 'active' : '') + '" data-id="' + q.id + '">' + bookmarkHtml + '</button></div>' +
             '</div>' +
             '<div class="q-text">' + highlightText(parseMarkdown(q.text), qStr) + '</div>' +
             interactiveHtml + resultHtml;
@@ -409,6 +549,24 @@
 
     // === Card Listeners ===
     function attachCardListeners() {
+        var cp = document.querySelectorAll('.btn-copy');
+        for (var i = 0; i < cp.length; i++) cp[i].addEventListener('click', function () {
+            var text = decodeURIComponent(this.getAttribute('data-text'));
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('📋 تم نسخ السؤال', 'toast-success');
+                });
+            } else {
+                // Fallback for older browsers
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 تم نسخ السؤال', 'toast-success');
+            }
+        });
         var bk = document.querySelectorAll('.btn-bookmark');
         for (var i = 0; i < bk.length; i++) bk[i].addEventListener('click', function () {
             var n = db.toggleBookmark(this.getAttribute('data-id'));
@@ -467,33 +625,44 @@
 
         var h = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">';
         h += '<title>' + title + '</title><style>';
-        h += '@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap");';
+        h += '@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap");';
         h += '*{box-sizing:border-box;margin:0;padding:0}';
-        h += 'body{font-family:"Tajawal",sans-serif;direction:rtl;color:#334155;padding:30px 40px;line-height:1.8;background:#fff;}';
-        h += '.hdr{text-align:center;border-bottom:3px solid #E2E8F0;padding-bottom:18px;margin-bottom:30px}';
-        h += '.hdr h1{font-size:1.8rem;color:#2563EB;margin-bottom:4px;font-weight:800;}';
-        h += '.hdr .sub{font-size:.95rem;color:#64748B}';
-        h += '.hdr .cnt{font-size:1rem;color:#334155;margin-top:4px;font-weight:500;}';
+        h += 'body{font-family:"Tajawal",sans-serif;direction:rtl;color:#334155;padding:0;line-height:1.8;background:#fff;}';
+        h += '.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;text-align:center;page-break-after:always;padding:2cm}';
+        h += '.cover-img{max-height:160px;margin-bottom:2.5rem;max-width:100%}';
+        h += '.cover h1{font-size:3.2rem;color:#1E293B;font-weight:900;margin-bottom:1rem;line-height:1.3}';
+        h += '.cover h2{font-size:1.8rem;color:#3B82F6;font-weight:700;margin-bottom:2.5rem}';
+        h += '.cover .meta{font-size:1.3rem;color:#475569;background:#F1F5F9;padding:12px 30px;border-radius:50px;margin-bottom:14px;font-weight:800;display:inline-block}';
+        h += '.cover .slogan{margin-top:auto;font-size:1.4rem;color:#3B82F6;font-weight:800;padding-top:20px;border-top:2px dashed #CBD5E1;width:100%}';
+        h += '.content-wrap{padding:20px 40px;}';
         h += '.sec{margin-bottom:30px;page-break-inside:avoid}';
-        h += '.sec-title{font-size:1.3rem;color:#3B82F6;border-bottom:2px solid #DBEAFE;padding-bottom:6px;margin-bottom:14px;font-weight:700;}';
-        h += '.qi{margin-bottom:16px;padding:14px 16px;border:1px solid #E2E8F0;border-radius:12px;page-break-inside:avoid;background:#F8FAFC}';
-        h += '.qi-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}';
-        h += '.qi-num{font-size:.85rem;color:#64748B;font-weight:700;background:#E2E8F0;padding:3px 10px;border-radius:6px}';
-        h += '.qi-type{font-size:.8rem;padding:3px 10px;border-radius:12px;font-weight:700}';
+        h += '.sec-title{font-size:1.4rem;color:#2563EB;border-bottom:3px solid #DBEAFE;padding-bottom:8px;margin-bottom:18px;font-weight:800;}';
+        h += '.qi{margin-bottom:18px;padding:16px 20px;border:1px solid #E2E8F0;border-right:5px solid #3B82F6;border-radius:12px;page-break-inside:avoid;background:#F8FAFC}';
+        h += '.qi-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}';
+        h += '.qi-num{font-size:.9rem;color:#475569;font-weight:800;background:#E2E8F0;padding:4px 12px;border-radius:6px}';
+        h += '.qi-type{font-size:.85rem;padding:4px 12px;border-radius:20px;font-weight:700}';
         h += '.qi-tf{background:#DBEAFE;color:#1E40AF}.qi-mcq{background:#F3E8FF;color:#6B21A8}';
-        h += '.qi-text{font-size:1.1rem;font-weight:700;margin-bottom:8px;color:#1E293B}';
-        h += '.qi-opts{list-style:none;padding:0}.qi-opts li{padding:6px 12px;margin-bottom:4px;background:#EEF2FF;border-radius:8px;font-size:1rem;color:#334155;}';
-        h += '.qi-ans{font-size:.95rem;color:#10B981;font-weight:700;margin-top:8px}';
+        h += '.qi-text{font-size:1.15rem;font-weight:800;margin-bottom:10px;color:#1E293B}';
+        h += '.qi-opts{list-style:none;padding:0}.qi-opts li{padding:8px 14px;margin-bottom:6px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;font-size:1rem;color:#334155;font-weight:500}';
+        h += '.qi-ans{font-size:.95rem;color:#10B981;font-weight:800;margin-top:12px;display:flex;align-items:center;gap:6px}';
         h += '.english-text{color:#2563EB;font-family:sans-serif;font-weight:800;padding:0 4px;direction:ltr;unicode-bidi:embed;display:inline-block}';
-        h += '.ftr{text-align:center;color:#94A3B8;font-size:.85rem;border-top:1px solid #E2E8F0;padding-top:14px}';
-        h += '@page{margin:15mm;@bottom-center{content:"صفحة " counter(page);font-family:"Tajawal",sans-serif;font-size:12px;color:#64748B}}';
-        h += '@media print{body{padding:0}.qi{border:1px solid #CBD5E1;background:#fff}.sec,.qi{page-break-inside:avoid}}';
+        h += '@page{margin:20mm 15mm;@bottom-center{content:" ❖ صفحة " counter(page) " ❖ ";font-family:"Tajawal",sans-serif;font-size:11pt;font-weight:800;color:#2563EB}}';
+        h += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.qi{border:1px solid #CBD5E1;border-right:5px solid #3B82F6}.sec,.qi{page-break-inside:avoid}}';
         h += '</style></head><body>';
 
-        h += '<div class="hdr"><h1>📚 ' + title + '</h1>';
-        h += '<div class="cnt">عدد الأسئلة: ' + questionsArr.length + '</div>';
-        if (noAnswers) h += '<div class="sub">(نسخة الطالب)</div>';
+        var basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        var logoSrc = basePath + 'logo/variations/logo-print.svg';
+
+        h += '<div class="cover">';
+        h += '<img src="' + logoSrc + '" alt="قضايا مجتمعية" class="cover-img">';
+        h += '<h1>بنك أسئلة القضايا المجتمعية</h1>';
+        h += '<h2>' + title + '</h2>';
+        h += '<div class="meta">عدد الأسئلة: ' + questionsArr.length + '</div>';
+        if (noAnswers) h += '<div class="meta">نسخة الطالب (بدون إجابات)</div>';
+        h += '<div class="slogan">بنك أسئلة القضايا المجتمعية • لا تنسوني من صالح دعائكم 💙</div>';
         h += '</div>';
+
+        h += '<div class="content-wrap">';
 
         var c = 0;
         var subjects = Object.keys(grouped);
@@ -523,7 +692,8 @@
             h += '</div>';
         }
 
-        h += '<div class="ftr">تم إعداد هذا الملف بواسطة بنك أسئلة القضايا المجتمعية</div>';
+        h += '</div>'; // End content-wrap
+
         h += '<script>window.onload=function(){setTimeout(function(){window.print();}, 500)};<\/script></body></html>';
         return h;
     }
@@ -613,6 +783,35 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
+
+    // === Smart Review ===
+    var btnSmartReview = document.getElementById('btn-smart-review');
+    if (btnSmartReview) {
+        btnSmartReview.addEventListener('click', function () {
+            if (filterStatus.value === 'wrong') {
+                filterStatus.value = 'all';
+                showToast('تم إغلاق وضع مراجعة الأخطاء', '');
+            } else {
+                filterStatus.value = 'wrong';
+                showToast('تم تفعيل وضع مراجعة الأخطاء', 'toast-success');
+            }
+            filterStatus.dispatchEvent(new Event('change'));
+            renderQuestions();
+        });
+    }
+
+    // Sync Smart Review Button
+    filterStatus.addEventListener('change', function() {
+        if (btnSmartReview) {
+            if (this.value === 'wrong') {
+                btnSmartReview.style.backgroundColor = '#10B981';
+                btnSmartReview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> إغلاق المراجعة';
+            } else {
+                btnSmartReview.style.backgroundColor = '#EF4444';
+                btnSmartReview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> مراجعة الأخطاء';
+            }
+        }
+    });
 
     // === Init ===
     updateStats();
