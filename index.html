@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="بنك أسئلة القضايا المجتمعية - تدرب وراجع واختبر نفسك">
+    <title>بنك أسئلة القضايا المجتمعية</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="34e213bb-a8d7-4c66-973a-3e7698b18c38"></script>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>📚 بنك القضايا</h2>
+            <button id="btn-close-sidebar" class="btn-icon btn-close-mobile" title="إغلاق القائمة">✕</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Navigation -->
+            <div class="nav-menu">
+                <button id="nav-questions" class="nav-btn active">📚 بنك الأسئلة</button>
+                <button id="nav-progress" class="nav-btn">📊 التقدم والإحصائيات</button>
+            </div>
+
+            <!-- Filters -->
+            <div class="controls">
+                <h3 class="section-title">🔍 الفلاتر</h3>
+                <div class="control-group">
+                    <label for="filter-subject">📌 الموضوع</label>
+                    <select id="filter-subject">
+                        <option value="all">الكل</option>
+                        <option value="السكان في مصر">السكان في مصر</option>
+                        <option value="حقوق الإنسان">حقوق الإنسان</option>
+                        <option value="الشفافية ومكافحة الفساد">الشفافية ومكافحة الفساد</option>
+                        <option value="التسامح الديني">التسامح الديني</option>
+                        <option value="التلوث البيئي">التلوث البيئي</option>
+                        <option value="الكوارث الطبيعية">الكوارث الطبيعية</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="filter-type">📝 النوع</label>
+                    <select id="filter-type">
+                        <option value="all">الكل</option>
+                        <option value="صح/خطأ">صح / خطأ</option>
+                        <option value="اختيار من متعدد">اختيار من متعدد</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="filter-status">📋 الحالة</label>
+                    <select id="filter-status">
+                        <option value="all">الكل</option>
+                        <option value="unanswered">لم تُجَب بعد</option>
+                        <option value="correct">صحيحة ✔️</option>
+                        <option value="wrong">خاطئة ✖️</option>
+                        <option value="bookmarked">المحفوظات 🔖</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Print Controls -->
+            <div class="print-controls">
+                <h3 class="section-title">🖨️ الطباعة</h3>
+                <div class="print-options" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="print-no-answers" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                    <label for="print-no-answers" style="font-size: 0.9rem; font-weight: 500; cursor: pointer;">طباعة بدون إجابات (نسخة الطالب)</label>
+                </div>
+                <div class="print-buttons">
+                    <button id="btn-print-all">🖨️ طباعة جميع الأسئلة</button>
+                    <button id="btn-print-bookmarked">🔖 طباعة المحفوظات</button>
+                    <div class="print-subject-wrapper">
+                        <label for="print-subject-select">حسب الموضوع:</label>
+                        <select id="print-subject-select">
+                            <option value="">— اختر موضوعاً —</option>
+                            <option value="السكان في مصر">السكان في مصر</option>
+                            <option value="حقوق الإنسان">حقوق الإنسان</option>
+                            <option value="الشفافية ومكافحة الفساد">الشفافية ومكافحة الفساد</option>
+                            <option value="التسامح الديني">التسامح الديني</option>
+                            <option value="التلوث البيئي">التلوث البيئي</option>
+                            <option value="الكوارث الطبيعية">الكوارث الطبيعية</option>
+                        </select>
+                        <button id="btn-print-subject">🖨️ طباعة</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Controls -->
+            <div class="data-controls">
+                <h3 class="section-title">⚙️ إدارة البيانات</h3>
+                <div class="data-buttons">
+                    <button id="btn-export">📥 تصدير تقدمي</button>
+                    <button id="btn-import-trigger">📤 استيراد التقدم</button>
+                    <button id="btn-reset" class="btn-danger">🗑️ إعادة تعيين</button>
+                </div>
+                <input type="file" id="import-file" accept=".json" style="display:none">
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="main-header">
+            <div class="header-right">
+                <button id="btn-toggle-sidebar" class="btn-icon btn-hamburger" title="القائمة">☰</button>
+                <div class="header-titles">
+                    <h1>بنك أسئلة القضايا المجتمعية</h1>
+                    <p>اختر إجابتك واحصل على نتيجة فورية!</p>
+                </div>
+            </div>
+            <div class="header-left">
+                <button id="btn-dark-mode" class="btn-icon" title="تبديل الوضع الليلي">🌙</button>
+            </div>
+        </header>
+
+        <div id="questions-view" class="view-section active">
+        <div class="dashboard">
+            <div class="stat-card">
+                <h3>إجمالي الأسئلة</h3>
+                <div class="value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>✔️ صحيحة</h3>
+                <div class="value correct-color" id="stat-correct">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>✖️ خاطئة</h3>
+                <div class="value wrong-color" id="stat-wrong">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>🔖 محفوظات</h3>
+                <div class="value" id="stat-bookmarked">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>📊 الإنجاز</h3>
+                <div class="value" id="stat-percent">0%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="ابحث في الأسئلة..." autocomplete="off">
+            <button id="search-clear" class="search-clear" title="مسح البحث">✕</button>
+        </div>
+
+        <div class="question-count" id="question-count"></div>
+        <div class="question-list" id="question-list"></div>
+        <div class="pagination" id="pagination"></div>
+        </div>
+
+        <div id="progress-view" class="view-section" style="display: none;">
+            <div class="dashboard" style="grid-template-columns: 1fr;">
+                <div class="stat-card" style="text-align: center; padding: 24px;">
+                    <h3>إجمالي التقدم العام</h3>
+                    <div id="main-progress-chart"></div>
+                </div>
+            </div>
+            <div id="progress-grid" class="progress-grid"></div>
+        </div>
+    </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<button id="btn-back-to-top" class="btn-back-to-top" title="العودة للأعلى">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="data/tf1_data.js"></script>
+<script src="data/tf2_data.js"></script>
+<script src="data/tf3_data.js"></script>
+<script src="data/tf4_data.js"></script>
+<script src="data/mcq5_data.js"></script>
+<script src="data/q6_data.js"></script>
+<script src="data/db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
