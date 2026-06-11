@@ -8,7 +8,7 @@ var db = {
 
     _loadAll: function () {
         if (this._allQuestions) return this._allQuestions;
-        this._allQuestions = [].concat(tf1_data, tf2_data, tf3_data, tf4_data, mcq5_data, q6_data);
+        this._allQuestions = [].concat(tf1_data, tf2_data, tf3_data, tf4_data, mcq5_data, q6_data, tf7_data);
         return this._allQuestions;
     },
 
