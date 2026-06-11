@@ -1,4 +1,4 @@
-const tf4_data = [
+var tf4_data = [
     {
         "id": "REL-001",
         "type": "صح/خطأ",

@@ -5,6 +5,7 @@
     var PER_PAGE = 15;
     var currentPage = 1;
     var currentFiltered = [];
+    var isRetryMode = false;
 
     // === DOM ===
     var qList = document.getElementById('question-list');
@@ -32,7 +33,13 @@
     var statWrong = document.getElementById('stat-wrong');
     var statBookmarked = document.getElementById('stat-bookmarked');
     var statPercent = document.getElementById('stat-percent');
-    var progressBar = document.getElementById('progress-bar');
+    
+    // Progress Bars
+    var progressBarCorrect = document.getElementById('progress-bar-correct');
+    var progressBarWrong = document.getElementById('progress-bar-wrong');
+    var sidebarOverviewPercent = document.getElementById('sidebar-overview-percent');
+    var sidebarOverviewCorrect = document.getElementById('sidebar-overview-correct');
+    var sidebarOverviewWrong = document.getElementById('sidebar-overview-wrong');
 
     var btnExport = document.getElementById('btn-export');
     var btnImportTrigger = document.getElementById('btn-import-trigger');
@@ -71,8 +78,17 @@
         statWrong.textContent = s.wrong;
         statBookmarked.textContent = s.bookmarked;
         var pct = s.total > 0 ? Math.round((s.answered / s.total) * 100) : 0;
+        var correctPct = s.total > 0 ? (s.correct / s.total) * 100 : 0;
+        var wrongPct = s.total > 0 ? (s.wrong / s.total) * 100 : 0;
+        
         statPercent.textContent = pct + '%';
-        progressBar.style.width = pct + '%';
+        
+        if (progressBarCorrect) progressBarCorrect.style.width = correctPct + '%';
+        if (progressBarWrong) progressBarWrong.style.width = wrongPct + '%';
+        
+        if (sidebarOverviewPercent) sidebarOverviewPercent.textContent = pct + '%';
+        if (sidebarOverviewCorrect) sidebarOverviewCorrect.style.width = correctPct + '%';
+        if (sidebarOverviewWrong) sidebarOverviewWrong.style.width = wrongPct + '%';
 
         if (pct === 100 && s.correct > 0 && !hasCelebrated) {
             hasCelebrated = true;
@@ -113,6 +129,11 @@
         if (kpiWrong) kpiWrong.textContent = s.wrong;
         if (kpiPercent) kpiPercent.textContent = percent + '%';
 
+        for (var key in chartInstances) {
+            if (chartInstances[key]) chartInstances[key].destroy();
+        }
+        chartInstances = {};
+
         mainProgressChart.innerHTML = '<div style="position: relative; height: 250px; width: 100%; margin: 0 auto;"><canvas id="chart-main"></canvas></div>';
 
         var subjStats = db.getSubjectStats();
@@ -140,11 +161,6 @@
             '</div>';
         }
         progressGrid.innerHTML = gridHtml;
-
-        for (var key in chartInstances) {
-            if (chartInstances[key]) chartInstances[key].destroy();
-        }
-        chartInstances = {};
 
         function createDoughnut(id, correct, wrong, unanswered) {
             var ctx = document.getElementById(id);
@@ -386,11 +402,11 @@
 
         if (q.type === 'صح/خطأ') {
             if (e.key === 'y' || e.key === 'Y' || e.key === 'ص') {
-                var btn = card.querySelector('.tf-sah');
-                if (btn) btn.click();
+                var sahBtn = card.querySelector('.tf-sah');
+                if (sahBtn) sahBtn.click();
             } else if (e.key === 'n' || e.key === 'N' || e.key === 'خ') {
-                var btn = card.querySelector('.tf-khata');
-                if (btn) btn.click();
+                var khataBtn = card.querySelector('.tf-khata');
+                if (khataBtn) khataBtn.click();
             }
         } else if (q.type === 'اختيار من متعدد') {
             if (['1', '2', '3', '4'].indexOf(e.key) > -1) {
@@ -443,7 +459,7 @@
         var parts = html.split(/(<[^>]*>)/);
         for (var i = 0; i < parts.length; i++) {
             if (i % 2 === 0) {
-                parts[i] = parts[i].replace(/([A-Za-z][A-Za-z0-9\-_]*(?:\s+[A-Za-z0-9\-_]+)*)/g, '<span class="english-text" dir="ltr">$1</span>');
+                parts[i] = parts[i].replace(/([A-Za-z][A-Za-z0-9\-_]+(?:\s+[A-Za-z0-9\-_]+)*)/g, '<span class="english-text" dir="ltr">$1</span>');
             }
         }
         html = parts.join('');
@@ -469,15 +485,15 @@
         var qStr = searchInput.value.trim();
         var card = document.createElement('div');
         var cls = 'question-card';
-        if (q.isCorrect === true) cls += ' answered-correct';
-        else if (q.isCorrect === false && filterStatus.value !== 'wrong') cls += ' answered-wrong';
+        if (q.isCorrect === true && filterStatus.value !== 'bookmarked') cls += ' answered-correct';
+        else if (q.isCorrect === false && filterStatus.value !== 'wrong' && filterStatus.value !== 'bookmarked') cls += ' answered-wrong';
         if (q.isBookmarked) cls += ' bookmarked';
         card.className = cls;
         card.id = 'q-' + q.id;
 
         var answered = (q.userAnswer !== null && q.userAnswer !== undefined);
-        if (filterStatus.value === 'wrong') {
-            answered = false; // Allow re-answering in smart review mode
+        if (filterStatus.value === 'wrong' || filterStatus.value === 'bookmarked' || isRetryMode) {
+            answered = false; // Allow re-answering in smart review, bookmarked, or global retry modes
         }
         var typeBadge = q.type === 'صح/خطأ'
             ? '<span class="badge badge-tf">صح / خطأ</span>'
@@ -501,8 +517,8 @@
                 q.options.forEach(function (opt) {
                     var oc = '';
                     if (answered) {
-                        if (q.answer === opt || opt.indexOf(q.answer) === 0 || q.answer.indexOf(opt.substring(0, 2)) === 0) oc = 'option-correct';
-                        if (q.userAnswer === opt && q.userAnswer !== q.answer && !(q.answer === opt || opt.indexOf(q.answer) === 0 || q.answer.indexOf(opt.substring(0, 2)) === 0)) oc = 'option-wrong-selected';
+                        if (q.answer === opt) oc = 'option-correct';
+                        if (q.userAnswer === opt && q.userAnswer !== q.answer) oc = 'option-wrong-selected';
                     }
                     interactiveHtml += '<li class="mcq-option ' + oc + '" data-id="' + q.id + '" data-option="' + escapeAttr(opt) + '" ' + (answered ? 'style="pointer-events:none"' : '') + '>' + highlightText(parseMarkdown(opt), qStr) + '</li>';
                 });
@@ -522,6 +538,7 @@
         var bookmarkHtml = (q.isBookmarked ? bookmarkIconFilled + ' محفوظ' : bookmarkIconOutline + ' حفظ');
 
         var copyIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        var retryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
         
         var rawText = q.text.replace(/<[^>]*>?/gm, '');
         var shareText = 'هل يمكنك حل هذا السؤال؟\n\n' + rawText + '\n\nالخيارات:\n';
@@ -534,9 +551,19 @@
         }
         var encodedShareText = encodeURIComponent(shareText);
 
+        var dbAnswered = (q.userAnswer !== null && q.userAnswer !== undefined);
+        var dbAnsweredHtml = '';
+        if (dbAnswered) {
+            if (q.isCorrect) {
+                dbAnsweredHtml = '<span class="status-icon" title="أجبت بشكل صحيح">✅</span>';
+            } else {
+                dbAnsweredHtml = '<span class="status-icon" title="أجبت بشكل خاطئ">❌</span>';
+            }
+        }
+
         card.innerHTML =
             '<div class="q-header">' +
-            '<div class="q-meta">' + typeBadge + '<span class="q-subject">' + q.subject + '</span></div>' +
+            '<div class="q-meta">' + typeBadge + '<span class="q-subject">' + q.subject + '</span>' + dbAnsweredHtml + '</div>' +
             '<div class="q-actions"><button class="btn-copy" data-text="' + encodedShareText + '" title="نسخ السؤال">' + copyIcon + ' نسخ</button><button class="btn-bookmark ' + (q.isBookmarked ? 'active' : '') + '" data-id="' + q.id + '">' + bookmarkHtml + '</button></div>' +
             '</div>' +
             '<div class="q-text">' + highlightText(parseMarkdown(q.text), qStr) + '</div>' +
@@ -650,8 +677,7 @@
         h += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.qi{border:1px solid #CBD5E1;border-right:5px solid #3B82F6}.sec,.qi{page-break-inside:avoid}}';
         h += '</style></head><body>';
 
-        var basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        var logoSrc = basePath + 'logo/variations/logo-print.svg';
+        var logoSrc = new URL('logo/variations/logo-print.svg', window.location.href).href;
 
         h += '<div class="cover">';
         h += '<img src="' + logoSrc + '" alt="قضايا مجتمعية" class="cover-img">';
@@ -708,24 +734,21 @@
 
     // Print All
     btnPrintAll.addEventListener('click', function () {
-        var noAns = document.getElementById('print-no-answers').checked;
-        openPrint('جميع الأسئلة - بنك أسئلة القضايا المجتمعية', db.getAllQuestions(), noAns);
+        openPrint('جميع الأسئلة - بنك أسئلة القضايا المجتمعية', db.getAllQuestions());
     });
 
     // Print Bookmarked
     btnPrintBookmarked.addEventListener('click', function () {
-        var noAns = document.getElementById('print-no-answers').checked;
         var bk = db.getAllQuestions().filter(function (q) { return q.isBookmarked; });
-        openPrint('الأسئلة المحفوظة 🔖', bk, noAns);
+        openPrint('الأسئلة المحفوظة 🔖', bk);
     });
 
     // Print by Subject
     btnPrintSubject.addEventListener('click', function () {
         var sub = printSubjectSelect.value;
         if (!sub) { showToast('اختر موضوعاً أولاً', 'toast-wrong'); return; }
-        var noAns = document.getElementById('print-no-answers').checked;
         var qs = db.getAllQuestions().filter(function (q) { return q.subject === sub; });
-        openPrint(sub, qs, noAns);
+        openPrint(sub, qs);
     });
 
     // === Data Controls ===
@@ -742,7 +765,7 @@
     });
     btnReset.addEventListener('click', function () {
         if (confirm('⚠️ هل أنت متأكد من إعادة تعيين كل التقدم؟')) {
-            db.resetProgress(); updateStats(); renderQuestions();
+            db.resetProgress(); hasCelebrated = false; updateStats(); renderQuestions();
             showToast('تمت إعادة التعيين', '');
         }
     });
@@ -796,7 +819,6 @@
                 showToast('تم تفعيل وضع مراجعة الأخطاء', 'toast-success');
             }
             filterStatus.dispatchEvent(new Event('change'));
-            renderQuestions();
         });
     }
 
@@ -804,15 +826,62 @@
     filterStatus.addEventListener('change', function() {
         if (btnSmartReview) {
             if (this.value === 'wrong') {
-                btnSmartReview.style.backgroundColor = '#10B981';
+                btnSmartReview.classList.add('active');
+                btnSmartReview.textContent = '';
                 btnSmartReview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> إغلاق المراجعة';
             } else {
-                btnSmartReview.style.backgroundColor = '#EF4444';
+                btnSmartReview.classList.remove('active');
+                btnSmartReview.textContent = '';
                 btnSmartReview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> مراجعة الأخطاء';
             }
         }
     });
 
+    // === Retry Mode ===
+    var btnRetryMode = document.getElementById('btn-retry-mode');
+    if (btnRetryMode) {
+        btnRetryMode.addEventListener('click', function () {
+            isRetryMode = !isRetryMode;
+            if (isRetryMode) {
+                btnRetryMode.classList.add('active');
+                btnRetryMode.textContent = '';
+                btnRetryMode.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> إيقاف إعادة الإجابة';
+                showToast('تم تفعيل وضع إعادة الإجابة للأسئلة المحلولة', 'toast-success');
+            } else {
+                btnRetryMode.classList.remove('active');
+                btnRetryMode.textContent = '';
+                btnRetryMode.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> إعادة الإجابة';
+                showToast('تم إغلاق وضع إعادة الإجابة', '');
+            }
+            renderCurrentPage();
+        });
+    }
+    // === Focus Mode ===
+    var btnFocusMode = document.getElementById('btn-focus-mode');
+    if (btnFocusMode) {
+        btnFocusMode.addEventListener('click', function () {
+            var isFocus = document.body.classList.toggle('focus-mode');
+            if (isFocus) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(function(){});
+                }
+                showToast('تم تفعيل وضع التركيز', 'toast-success');
+            } else {
+                if (document.exitFullscreen && document.fullscreenElement) {
+                    document.exitFullscreen().catch(function(){});
+                }
+                showToast('تم إغلاق وضع التركيز', '');
+            }
+        });
+
+        // Listen for Esc key exiting fullscreen to sync UI
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement && document.body.classList.contains('focus-mode')) {
+                document.body.classList.remove('focus-mode');
+                showToast('تم إغلاق وضع التركيز', '');
+            }
+        });
+    }
     // === Init ===
     updateStats();
     renderQuestions();

@@ -47,6 +47,15 @@ var db = {
         return isCorrect;
     },
 
+    clearAnswer: function (id) {
+        var saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        if (saved[id]) {
+            delete saved[id].userAnswer;
+            delete saved[id].isCorrect;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        }
+    },
+
     toggleBookmark: function (id) {
         var saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         var current = (saved[id] && saved[id].isBookmarked) || false;
@@ -101,6 +110,22 @@ var db = {
     importData: function (jsonString) {
         try {
             var data = JSON.parse(jsonString);
+            if (typeof data !== 'object' || data === null || Array.isArray(data)) return false;
+            var validKeys = ['userAnswer', 'isCorrect', 'isBookmarked'];
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var entry = data[key];
+                    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return false;
+                    for (var prop in entry) {
+                        if (entry.hasOwnProperty(prop) && validKeys.indexOf(prop) === -1) {
+                            delete entry[prop];
+                        }
+                    }
+                    if (entry.userAnswer !== undefined && entry.userAnswer !== null && typeof entry.userAnswer === 'string') {
+                        entry.userAnswer = entry.userAnswer.replace(/<script[\s\S]*?<\/script>/gi, '');
+                    }
+                }
+            }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             return true;
         } catch (e) { return false; }

@@ -1,4 +1,4 @@
-const mcq5_data = [
+var mcq5_data = [
     {
         "id": "ENV-001",
         "type": "اختيار من متعدد",

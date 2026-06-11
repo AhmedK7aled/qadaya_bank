@@ -19,14 +19,23 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="logo/variations/logo-sidebar.svg" alt="بنك القضايا المجتمعية" class="logo-sidebar">
-            <button id="btn-close-sidebar" class="btn-icon btn-close-mobile" title="إغلاق القائمة">✕</button>
+            <button id="btn-close-sidebar" class="btn-icon btn-close-mobile" title="إغلاق القائمة" aria-label="إغلاق القائمة">✕</button>
         </div>
         
         <div class="sidebar-content">
             <!-- Navigation -->
             <div class="nav-menu">
                 <button id="nav-questions" class="nav-btn active">📚 بنك الأسئلة</button>
-                <button id="nav-progress" class="nav-btn">📊 التقدم والإحصائيات</button>
+                <button id="nav-progress" class="nav-btn" style="padding-bottom: 10px; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+                        <span>📊 التقدم والإحصائيات</span>
+                        <span id="sidebar-overview-percent" style="font-size: 0.85rem; color: var(--text-muted);">0%</span>
+                    </div>
+                    <div class="progress-bar-container stacked" style="height: 4px; margin-top: 0; background: var(--border-color);">
+                        <div class="progress-bar correct-bar" id="sidebar-overview-correct"></div>
+                        <div class="progress-bar wrong-bar" id="sidebar-overview-wrong"></div>
+                    </div>
+                </button>
             </div>
 
             <!-- Filters -->
@@ -107,56 +116,85 @@
     <main class="main-content">
         <header class="main-header">
             <div class="header-right">
-                <button id="btn-toggle-sidebar" class="btn-icon btn-hamburger" title="القائمة">☰</button>
+                <button id="btn-toggle-sidebar" class="btn-icon btn-hamburger" title="القائمة" aria-label="القائمة">☰</button>
                 <div class="header-titles">
                     <h1>بنك أسئلة القضايا المجتمعية</h1>
                     <p>لا تنسوني من صالح دعائكم 💙</p>
                 </div>
             </div>
-            <div class="header-left">
-                <button id="btn-dark-mode" class="btn-icon" title="تبديل الوضع الليلي">🌙</button>
+            <div class="header-left" style="display: flex; gap: 10px;">
+                <button id="btn-focus-mode" class="btn-icon desktop-only" title="وضع التركيز وملء الشاشة" aria-label="وضع التركيز وملء الشاشة">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                </button>
+                <button id="btn-dark-mode" class="btn-icon" title="تبديل الوضع الليلي" aria-label="تبديل الوضع الليلي">🌙</button>
             </div>
         </header>
 
         <div id="questions-view" class="view-section active">
         <div class="dashboard">
             <div class="stat-card">
-                <h3>إجمالي الأسئلة</h3>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    إجمالي الأسئلة
+                </h3>
                 <div class="value" id="stat-total">0</div>
             </div>
             <div class="stat-card">
-                <h3>✔️ صحيحة</h3>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    صحيحة
+                </h3>
                 <div class="value correct-color" id="stat-correct">0</div>
             </div>
             <div class="stat-card">
-                <h3>✖️ خاطئة</h3>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    خاطئة
+                </h3>
                 <div class="value wrong-color" id="stat-wrong">0</div>
             </div>
             <div class="stat-card">
-                <h3>🔖 محفوظات</h3>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                    محفوظات
+                </h3>
                 <div class="value" id="stat-bookmarked">0</div>
             </div>
             <div class="stat-card">
-                <h3>📊 الإنجاز</h3>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    الإنجاز
+                </h3>
                 <div class="value" id="stat-percent">0%</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" id="progress-bar"></div>
+                <div class="progress-bar-container stacked">
+                    <div class="progress-bar correct-bar" id="progress-bar-correct"></div>
+                    <div class="progress-bar wrong-bar" id="progress-bar-wrong"></div>
                 </div>
             </div>
         </div>
 
         <div class="search-bar">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="ابحث في الأسئلة..." autocomplete="off">
-            <button id="search-clear" class="search-clear" title="مسح البحث">✕</button>
+            <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" id="search-input" placeholder="ابحث في الأسئلة (مثال: البيئة، الفساد)..." autocomplete="off">
+            <button id="search-clear" class="search-clear" title="مسح البحث">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
 
-        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
             <div class="question-count" id="question-count" style="margin-bottom: 0;"></div>
-            <button id="btn-smart-review" style="background-color: #EF4444; border: none; padding: 8px 16px; border-radius: 8px; color: #fff; font-family: 'Tajawal', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2); transition: all 0.2s;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                مراجعة الأخطاء
-            </button>
+            <div class="header-actions" style="display: flex; gap: 8px;">
+                <button id="btn-retry-mode" class="btn-retry-mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    إعادة الإجابة
+                </button>
+                <button id="btn-smart-review" class="btn-smart-review">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    مراجعة الأخطاء
+                </button>
+            </div>
         </div>
         <div class="question-list" id="question-list"></div>
         <div class="pagination" id="pagination"></div>
@@ -219,11 +257,12 @@
     </main>
 </div>
 
-<div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-<button id="btn-back-to-top" class="btn-back-to-top" title="العودة للأعلى">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-</button>
+    <!-- Back to top -->
+    <button id="btn-back-to-top" class="btn-back-to-top" aria-label="العودة للأعلى">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="data/tf1_data.js"></script>

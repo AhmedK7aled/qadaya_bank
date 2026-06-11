@@ -1,4 +1,4 @@
-const q6_data = [
+var q6_data = [
     {
         "id": "DIS-001",
         "type": "اختيار من متعدد",

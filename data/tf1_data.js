@@ -1,4 +1,4 @@
-const tf1_data = [
+var tf1_data = [
     {
         "id": "EGY-001",
         "type": "صح/خطأ",

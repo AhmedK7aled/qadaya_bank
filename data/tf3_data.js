@@ -1,4 +1,4 @@
-const tf3_data = [
+var tf3_data = [
     {
         "id": "COR-001",
         "type": "صح/خطأ",
